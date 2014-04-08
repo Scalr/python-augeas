@@ -40,12 +40,11 @@ Nils Philippsen <nils@redhat.com>
 
 import types
 import ctypes
-import ctypes.util
-from sys import version_info as _pyver
+import sys
 from functools import reduce
 
 
-PY3 = _pyver >= (3,)
+PY3 = sys.version_info >= (3,)
 AUGENC = 'utf8'
 
 
@@ -65,21 +64,14 @@ def dec(st):
         return st.decode(AUGENC)
 
 
-def _dlopen(*args):
-    """Search for one of the libraries given as arguments and load it.
-    Returns the library.
-    """
-    libs = [l for l in [ ctypes.util.find_library(a) for a in args ] if l]
-    lib  = reduce(lambda x, y: x or ctypes.cdll.LoadLibrary(y), libs, None)
-    if not lib:
-        raise ImportError("Unable to import lib%s!" % args[0])
-    return lib
-
 class Augeas(object):
     "Class wrapper for the augeas library"
 
     # Load libaugeas
-    _libaugeas = _dlopen("augeas")
+    if sys.platform == 'darwin':
+        _libaugeas = ctypes.CDLL('libaugeas.dylib')
+    else:
+        _libaugeas = ctypes.CDLL('libaugeas.so')
     _libaugeas.aug_init.restype = ctypes.c_void_p
 
     # Augeas Flags
